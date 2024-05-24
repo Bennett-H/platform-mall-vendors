@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.platform.modules.mall.dao.MallUserDao">
+
+    <sql id="selectSql">
+        SELECT
+        T.ID,
+        T.USER_NAME,
+        T.PASSWORD,
+        T.GENDER,
+        T.BIRTHDAY,
+        T.REGISTER_TIME,
+        T.LAST_LOGIN_TIME,
+        T.LAST_LOGIN_IP,
+        T.USER_LEVEL_ID,
+        T.NICKNAME,
+        T.MOBILE,
+        T.REGISTER_IP,
+        T.HEAD_IMG_URL,
+        T.OPEN_ID,
+        T.MP_OPEN_ID,
+        T.UNION_ID,
+        T.SUBSCRIBE,
+        T.SUBSCRIBE_TIME,
+        T.INTEGRAL,
+        T.BALANCE,
+        T.USER_TAGS,
+        L.NAME USER_LEVEL_NAME
+        FROM MALL_USER T
+        LEFT JOIN MALL_USER_LEVEL L ON T.USER_LEVEL_ID = L.ID
+        WHERE 1=1
+        <if test="params.userName != null and params.userName.trim() != ''">
+            AND T.USER_NAME LIKE '%${params.userName}%'
+        </if>
+        <if test="params.mobile != null and params.mobile.trim() != ''">
+            AND T.MOBILE LIKE '%${params.mobile}%'
+        </if>
+        <if test="params.gender != null and params.gender.trim() != ''">
+            AND T.GENDER = #{params.gender}
+        </if>
+        <if test="params.openids != null">
+            and T.MP_OPEN_ID in
+            <foreach item="openid" collection="params.openids" open="(" separator="," close=")">
+                #{openid}
+            </foreach>
+        </if>
+        <if test="params.userTags != null and params.userTags.trim() != ''">
+            and FIND_IN_SET(#{params.userTags},USER_TAGS);
+        </if>
+    </sql>
+
+    <select id="selectMallUserPage" resultType="com.platform.modules.mall.entity.MallUserEntity">
+        <include refid="selectSql"/>
+    </select>
+
+    <select id="queryAll" resultType="com.platform.modules.mall.entity.MallUserEntity">
+        <include refid="selectSql"/>
+    </select>
+</mapper>

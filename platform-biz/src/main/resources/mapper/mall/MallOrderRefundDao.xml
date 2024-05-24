@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.platform.modules.mall.dao.MallOrderRefundDao">
+
+    <sql id="selectSql">
+        SELECT
+        T.ID,
+        T.ORDER_SN,
+        T.USER_ID,
+        T.REFUND_TYPE,
+        T.REFUND_TIME,
+        T.REFUND_MONEY,
+        T.REFUND_STATUS,
+        T.REFUND_REASON,
+        T.APPROVER,
+        T.APPROVAL_TIME,
+        T.APPROVAL_REMARK,
+        T.SALESERVICE_ID,
+        U.NICKNAME,
+        U.MOBILE
+        FROM MALL_ORDER_REFUND T
+        LEFT JOIN MALL_USER U ON T.USER_ID = U.ID
+        WHERE 1=1
+        <if test="params.orderSn != null and params.orderSn.trim() != ''">
+            AND T.ORDER_SN LIKE '%${params.orderSn}%'
+        </if>
+        <if test="params.userName != null and params.userName.trim() != ''">
+            AND U.NICKNAME LIKE '%${params.userName}%'
+        </if>
+        <if test="params.refundStatus != null and params.refundStatus != ''">
+            AND T.REFUND_STATUS = #{params.refundStatus}
+        </if>
+        <if test="params.refundType != null and params.refundType != ''">
+            AND T.REFUND_TYPE = #{params.refundType}
+        </if>
+    </sql>
+
+    <select id="selectMallOrderRefundPage" resultType="com.platform.modules.mall.entity.MallOrderRefundEntity">
+        <include refid="selectSql"/>
+    </select>
+
+    <select id="queryAll" resultType="com.platform.modules.mall.entity.MallOrderRefundEntity">
+        <include refid="selectSql"/>
+    </select>
+</mapper>

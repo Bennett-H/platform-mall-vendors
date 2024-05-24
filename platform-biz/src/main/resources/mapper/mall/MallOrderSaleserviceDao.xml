@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.platform.modules.mall.dao.MallOrderSaleserviceDao">
+
+    <sql id="selectSql">
+        SELECT
+        T.ID,
+        T.ORDER_SN,
+        T.USER_ID,
+        T.SALESERVICE_SN,
+        T.REASON,
+        T.AMOUNT,
+        T.STATUS,
+        T.CREATE_TIME,
+        T.HANDLE_TIME,
+        T.REFUND_TIME,
+        T.HANDLE_REASON,
+        T.REMARK,
+        U.NICKNAME,
+        U.MOBILE
+        FROM MALL_ORDER_SALESERVICE T
+        LEFT JOIN MALL_USER U ON T.USER_ID = U.ID
+        WHERE 1=1
+        <if test="params.status != null and params.status != ''">
+            AND T.STATUS = #{params.status}
+        </if>
+        <if test="params.id != null and params.id.trim() != ''">
+            AND T.ID = #{params.id}
+        </if>
+        <if test="params.userName != null and params.userName.trim() != ''">
+            AND U.NICKNAME LIKE '%${params.userName}%'
+        </if>
+        <if test="params.orderSn != null and params.orderSn.trim() != ''">
+            AND T.ORDER_SN LIKE '%${params.orderSn}%'
+        </if>
+    </sql>
+
+    <select id="selectMallOrderSaleservicePage" resultType="com.platform.modules.mall.entity.MallOrderSaleserviceEntity">
+        <include refid="selectSql"/>
+    </select>
+
+    <select id="queryAll" resultType="com.platform.modules.mall.entity.MallOrderSaleserviceEntity">
+        <include refid="selectSql"/>
+    </select>
+</mapper>

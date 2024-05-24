@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.platform.modules.mall.dao.MallGroupBuyingRecordDao">
+
+    <sql id="selectSql">
+        SELECT
+        T.ID,
+        T.GOODS_ID,
+        T.GOODS_DETAIL,
+        T.USER_ID,
+        T.NICKNAME,
+        T.HEAD_IMG_URL,
+        T.IS_LEADER,
+        T.LEADER_ID,
+        LU.NICKNAME LEADER_NICKNAME,
+        LU.HEAD_IMG_URL LEADER_HEAD_IMG_URL,
+        T.ORDER_SN,
+        T.EXPIRE_TIME,
+        T.JOIN_NUMBER,
+        T.PRICE,
+        T.STATUS,
+        T.CREATE_TIME,
+        T.UPDATE_TIME,
+        T.END_TIME,
+        G.NAME GOODS_NAME,
+        G.GROUP_NUMBER,
+        G.LIST_PIC_URL,
+        G.SALES,
+        O.ORDER_PRICE,
+        O.PAY_STATUS
+        FROM MALL_GROUP_BUYING_RECORD T
+        LEFT JOIN MALL_GROUP_BUYING_RECORD LU ON T.LEADER_ID = LU.ID
+        LEFT JOIN MALL_GOODS G ON T.GOODS_ID = G.ID
+        LEFT JOIN MALL_ORDER O ON T.ORDER_SN = O.ORDER_SN
+        WHERE 1=1
+        <if test="params.status != null">
+            AND T.STATUS = #{params.status}
+        </if>
+        <if test="params.isLeader != null">
+            AND T.IS_LEADER = #{params.isLeader}
+        </if>
+        <if test="params.payStatus != null">
+            AND O.PAY_STATUS = #{params.payStatus}
+        </if>
+        <if test="params.groupId != null and params.groupId != ''">
+            AND T.ID = #{params.groupId}
+        </if>
+        <if test="params.goodsId != null and params.goodsId != ''">
+            AND T.GOODS_ID = #{params.goodsId}
+        </if>
+        <if test="params.userId != null and params.userId != ''">
+            AND T.USER_ID = #{params.userId}
+        </if>
+        <if test="params.leaderId != null and params.leaderId != ''">
+            AND T.LEADER_ID = #{params.leaderId}
+        </if>
+        <if test="params.orderSn != null and params.orderSn != ''">
+            AND T.ORDER_SN = #{params.orderSn}
+        </if>
+    </sql>
+    <!-- 根据key，更新value -->
+    <update id="addJoinNumber" parameterType="map">
+        UPDATE MALL_GROUP_BUYING_RECORD SET JOIN_NUMBER = JOIN_NUMBER+1,UPDATE_TIME=sysdate() WHERE LEADER_ID = #{leaderId}
+    </update>
+    <update id="updateStatus" parameterType="map">
+        UPDATE MALL_GROUP_BUYING_RECORD SET STATUS = #{status},UPDATE_TIME=sysdate(),END_TIME=sysdate() WHERE LEADER_ID = #{groupId} OR ID = #{groupId}
+    </update>
+
+    <select id="selectMallGroupBuyingRecordPage" resultType="com.platform.modules.mall.entity.MallGroupBuyingRecordEntity">
+        <include refid="selectSql"/>
+    </select>
+
+    <select id="queryAll" resultType="com.platform.modules.mall.entity.MallGroupBuyingRecordEntity">
+        <include refid="selectSql"/>
+    </select>
+</mapper>

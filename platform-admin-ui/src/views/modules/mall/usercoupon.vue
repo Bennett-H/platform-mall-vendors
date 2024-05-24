@@ -1,0 +1,298 @@
+<template>
+  <div class="mod-usercoupon">
+    <el-form :inline="true" :model="searchForm" @keyup.enter.native="getDataList(1)">
+      <el-form-item>
+        <el-input v-model="searchForm.nickname" placeholder="会员昵称" clearable></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="searchForm.couponSn" placeholder="优惠券编号" clearable></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="searchForm.type" clearable placeholder="领取渠道" @change="getDataList(1)">
+          <el-option
+            key="0"
+            label="平台发放"
+            value="0">
+          </el-option>
+          <el-option
+            key="1"
+            label="自动发放"
+            value="1">
+          </el-option>
+          <el-option
+            key="2"
+            label="领券中心"
+            value="2">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="searchForm.status" clearable placeholder="使用状态" @change="getDataList(1)">
+          <el-option
+            key="0"
+            label="未使用"
+            value="0">
+          </el-option>
+          <el-option
+            key="1"
+            label="已使用"
+            value="1">
+          </el-option>
+          <el-option
+            key="2"
+            label="已过期"
+            value="2">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button @click="getDataList(1)">查询</el-button>
+        <el-button v-if="isAuth('mall:usercoupon:delete')" type="danger" @click="deleteHandle()"
+                   :disabled="dataListSelections.length <= 0">批量删除
+        </el-button>
+      </el-form-item>
+    </el-form>
+    <el-table
+      :data="dataList"
+      border
+      @selection-change="selectionChangeHandle"
+      style="width: 100%;">
+      <el-table-column
+        type="selection"
+        header-align="center"
+        align="center"
+        width="50">
+      </el-table-column>
+      <el-table-column
+        width="200"
+        prop="nickname"
+        header-align="center"
+        align="center"
+        label="会员昵称">
+        <template slot-scope="scope">
+          <el-button type="text" size="small" @click="showUserDetails(scope.row.userId)">{{scope.row.nickname}}
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="title"
+        header-align="center"
+        align="center"
+        label="优惠券编号">
+        <template slot-scope="scope">
+          <el-button type="text" size="small" @click="showCouponDetails(scope.row.couponId)">{{scope.row.couponSn}}
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="addTime"
+        header-align="center"
+        align="center"
+        label="领用时间">
+      </el-table-column>
+      <el-table-column
+        prop="type"
+        header-align="center"
+        align="center"
+        label="领取类型">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.type === 0" size="small" type="success">平台发放</el-tag>
+          <el-tag v-else-if="scope.row.type === 1" size="small" type="danger">自动发放</el-tag>
+          <el-tag v-else-if="scope.row.type === 2" size="small" type="danger">领券中心领取</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="status"
+        header-align="center"
+        align="center"
+        label="状态">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.status === 0" size="small" type="success">未使用</el-tag>
+          <el-tag v-else-if="scope.row.status === 1" size="small" type="danger">已使用</el-tag>
+          <el-tag v-else-if="scope.row.status === 2" size="small" type="info">过期</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="usedTime"
+        header-align="center"
+        align="center"
+        label="使用时间">
+      </el-table-column>
+      <el-table-column
+        prop="orderId"
+        header-align="center"
+        align="center"
+        label="使用的订单编号">
+        <template slot-scope="scope">
+          <el-button v-if="scope.row.status === 1" type="text" size="small" @click="showOrderDetails(scope.row.orderId)">{{scope.row.orderSn}}
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column
+        fixed="right"
+        header-align="center"
+        align="center"
+        width="150"
+        label="操作">
+        <template slot-scope="scope">
+          <el-button v-if="isAuth('mall:usercoupon:info')" type="text" size="small" @click="showDetails(scope.row.id)">
+            查看
+          </el-button>
+          <el-button v-if="isAuth('mall:usercoupon:delete')" type="text" size="small"
+                     @click="deleteHandle(scope.row.id)">删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      @size-change="sizeChangeHandle"
+      @current-change="currentChangeHandle"
+      :current-page="pageIndex"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pageSize"
+      :total="totalPage"
+      layout="total, sizes, prev, pager, next, jumper">
+    </el-pagination>
+    <!-- 弹窗, 新增 / 修改 -->
+    <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+    <user-detail v-if="userDetailVisible" ref="userDetail"></user-detail>
+    <coupon-detail v-if="couponDetailVisible" ref="couponDetail"></coupon-detail>
+    <order-detail v-if="orderDetailVisible" ref="orderDetail"></order-detail>
+  </div>
+</template>
+
+<script>
+import AddOrUpdate from './usercoupon-add-or-update'
+import UserDetail from './user-add-or-update'
+import CouponDetail from './coupon-add-or-update'
+import OrderDetail from './order-add-or-update'
+
+export default {
+  data () {
+    return {
+      searchForm: {
+        nickname: '',
+        couponSn: '',
+        type: '',
+        status: ''
+      },
+      dataList: [],
+      pageIndex: 1,
+      pageSize: 10,
+      totalPage: 0,
+      dataListSelections: [],
+      addOrUpdateVisible: false,
+      userDetailVisible: false,
+      couponDetailVisible: false,
+      orderDetailVisible: false
+    }
+  },
+  components: {
+    AddOrUpdate,
+    UserDetail,
+    CouponDetail,
+    OrderDetail
+  },
+  activated () {
+    this.getDataList()
+  },
+  methods: {
+    // 查看会员详情
+    showUserDetails (id) {
+      this.userDetailVisible = true
+      this.$nextTick(() => {
+        this.$refs.userDetail.init(id, true)
+      })
+    },
+    // 查看优惠券详情
+    showCouponDetails (id) {
+      this.couponDetailVisible = true
+      this.$nextTick(() => {
+        this.$refs.couponDetail.init(id, true)
+      })
+    },
+    // 查看订单详情
+    showOrderDetails (id) {
+      this.orderDetailVisible = true
+      this.$nextTick(() => {
+        this.$refs.orderDetail.init(id)
+      })
+    },
+    // 获取数据列表
+    getDataList (page) {
+      if (page) {
+        this.pageIndex = page
+      }
+      this.$http({
+        url: '/mall/usercoupon/list',
+        method: 'get',
+        params: {
+          'page': this.pageIndex,
+          'limit': this.pageSize,
+          'nickname': this.searchForm.nickname,
+          'couponSn': this.searchForm.couponSn,
+          'type': this.searchForm.type,
+          'status': this.searchForm.status
+        }
+      }).then(({data}) => {
+        if (data && data.code === 0) {
+          this.dataList = data.page.records
+          this.totalPage = data.page.total
+        } else {
+          this.dataList = []
+          this.totalPage = 0
+        }
+      })
+    },
+    // 每页数
+    sizeChangeHandle (val) {
+      this.pageSize = val
+      this.pageIndex = 1
+      this.getDataList()
+    },
+    // 当前页
+    currentChangeHandle (val) {
+      this.pageIndex = val
+      this.getDataList()
+    },
+    // 多选
+    selectionChangeHandle (val) {
+      this.dataListSelections = val
+    },
+    // 查看详情
+    showDetails (id) {
+      this.addOrUpdateVisible = true
+      this.$nextTick(() => {
+        this.$refs.addOrUpdate.init(id)
+      })
+    },
+    // 删除
+    deleteHandle (id) {
+      let ids = id ? [id] : this.dataListSelections.map(item => {
+        return item.id
+      })
+      this.$confirm('确定对所选项进行[删除]操作?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$http({
+          url: '/mall/usercoupon/delete',
+          method: 'post',
+          data: ids
+        }).then(({data}) => {
+          if (data && data.code === 0) {
+            this.$message({
+              message: '操作成功',
+              type: 'success',
+              duration: 1500
+            })
+            this.getDataList()
+          }
+        })
+      }).catch(() => {
+      })
+    }
+  }
+}
+</script>

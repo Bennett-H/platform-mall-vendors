@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.platform.modules.mall.dao.MallShopsWithdrawDao">
+
+    <sql id="selectSql">
+        SELECT
+        T.ID,
+        T.SHOPS_ID,
+        T.USER_ID,
+        T.APPLY_TYPE,
+        T.APPLY_TIME,
+        T.APPLY_MONEY,
+        T.APPROVER,
+        T.APPROVAL_TIME,
+        T.APPROVAL_REMARK,
+        T.WITHDRAW_USER_ID,
+        T.APPLY_STATUS,
+        T.COMMISSION,
+        T.ENC_BANK_NO,
+        T.ENC_TRUE_NAME,
+        T.BANK_CODE,
+        T.PAYMENT_NO,
+        SU.USER_NAME as USER_NAME,
+        MS.NAME as SHOPS_NAME,
+        MS.SHOPS_SN as SHOPS_SN,
+        SU.MOBILE as MOBILE
+        FROM MALL_SHOPS_WITHDRAW T
+        LEFT JOIN SYS_USER SU on SU.USER_ID = T.USER_ID
+        LEFT JOIN MALL_SHOPS MS on MS.id = T.SHOPS_ID
+        WHERE 1=1
+        <if test="params.applyStatus != null and params.applyStatus.trim() != ''">
+            AND T.APPLY_STATUS = #{params.applyStatus}
+        </if>
+        <if test="params.applyType != null and params.applyType.trim() != ''">
+            AND T.APPLY_TYPE = #{params.applyType}
+        </if>
+        <if test="params.userName != null and params.userName.trim() != ''">
+            AND SU.USER_NAME  LIKE '%${params.userName}%'
+        </if>
+        <if test="params.mobile != null and params.mobile.trim() != ''">
+            AND SU.MOBILE  LIKE '%${params.mobile}%'
+        </if>
+        <if test="params.shopsId != null and params.shopsId.trim() != ''">
+            AND MS.ID = #{params.shopsId}
+        </if>
+    </sql>
+
+    <select id="selectMallShopsWithdrawPage" resultType="com.platform.modules.mall.entity.MallShopsWithdrawEntity">
+        <include refid="selectSql"/>
+        order by T.APPLY_TIME desc
+    </select>
+
+    <select id="queryAll" resultType="com.platform.modules.mall.entity.MallShopsWithdrawEntity">
+        <include refid="selectSql"/>
+        order by T.APPLY_TIME desc
+    </select>
+
+    <select id="queryWithdrawTotal" resultType="java.math.BigDecimal">
+        SELECT
+        sum(APPLY_MONEY) as withdrawTotal
+        FROM MALL_SHOPS_WITHDRAW T
+        where (apply_status =1 or apply_status =2 or apply_status =4)
+        <if test="params.userId != null and params.userId.trim() != ''">
+            AND T.USER_ID = #{params.userId}
+        </if>
+    </select>
+
+    <select id="getById" resultType="com.platform.modules.mall.entity.MallShopsWithdrawEntity">
+        SELECT
+        T.ID,
+        T.USER_ID,
+        T.SHOPS_ID,
+        T.APPLY_TYPE,
+        T.APPLY_TIME,
+        T.APPLY_MONEY,
+        T.APPROVER,
+        T.APPROVAL_TIME,
+        T.APPROVAL_REMARK,
+        T.WITHDRAW_USER_ID,
+        T.APPLY_STATUS,
+        T.COMMISSION,
+        SU.USER_NAME as USER_NAME,
+        MS.NAME as SHOPS_NAME,
+        MS.SHOPS_SN as SHOPS_SN,
+        SU.MOBILE as MOBILE
+        FROM MALL_SHOPS_WITHDRAW T
+        LEFT JOIN SYS_USER SU on SU.USER_ID = T.USER_ID
+        LEFT JOIN MALL_SHOPS MS on MS.id = T.SHOPS_ID
+        WHERE 1=1
+        <if test="id != null and id.trim() != ''">
+            AND T.ID = #{id}
+        </if>
+    </select>
+
+    <sql id="selectOrderSql">
+        SELECT
+        T.ID,
+        T.FROM_TYPE,
+        T.ORDER_TYPE,
+        T.ORDER_SN,
+        T.USER_ID,
+        T.ORDER_STATUS,
+        T.SHIPPING_STATUS,
+        T.PAY_STATUS,
+        T.PAY_TYPE,
+        T.CONSIGNEE,
+        T.COUNTRY,
+        T.PROVINCE,
+        T.CITY,
+        T.DISTRICT,
+        T.ADDRESS,
+        T.POSTAL_CODE,
+        T.MOBILE,
+        T.POSTSCRIPT,
+        T.SHIPPING_ID,
+        T.SHIPPING_NAME,
+        T.SHIPPING_CODE,
+        T.SHIPPING_NO,
+        T.SHIPPING_FEE,
+        T.PREPAY_ID,
+        T.ACTUAL_PRICE,
+        T.INTEGRAL_MONEY,
+        T.ORDER_PRICE,
+        T.ADD_TIME,
+        T.CONFIRM_TIME,
+        T.PAY_TIME,
+        T.COUPON_ID,
+        T.COUPON_PRICE,
+        T.PARENT_ID,
+        T.SHOPS_ID,
+        T.GOODS_ID,
+        T.EXPIRE_TIME,
+        U.NICKNAME,
+        S.NAME SHOPS_NAME,
+        S.SHOPS_SN,
+        SU.USER_NAME ADMIN_USER_NAME,
+        SU.MOBILE ADMIN_MOBILE
+        FROM MALL_ORDER T
+        LEFT JOIN MALL_USER U ON T.USER_ID = U.ID
+        LEFT JOIN MALL_SHOPS S ON T.SHOPS_ID = S.ID
+        LEFT JOIN SYS_USER SU ON S.USER_ID = SU.USER_ID
+    </sql>
+
+    <select id="selectCanWithdrawList" resultType="com.platform.modules.mall.entity.MallOrderEntity">
+        <include refid="selectOrderSql"/>
+        WHERE 1=1 AND T.SHOPS_ID = #{shopsId} and T.ORDER_STATUS = 301
+        AND NOT EXISTS (SELECT 1 FROM MALL_SHOPS_WITHDRAW_ORDER WO LEFT JOIN MALL_SHOPS_WITHDRAW W ON WO.WITHDRAW_ID = W.ID
+        WHERE W.SHOPS_ID = #{shopsId} and WO.ORDER_ID = T.ID AND W.apply_status IN (1, 2)
+        )
+        order by T.ADD_TIME DESC
+    </select>
+
+    <select id="selectRelaOrderList" resultType="com.platform.modules.mall.entity.MallOrderEntity">
+        <include refid="selectOrderSql"/>
+        LEFT JOIN MALL_SHOPS_WITHDRAW_ORDER WO ON WO.ORDER_ID = T.ID
+        LEFT JOIN MALL_SHOPS_WITHDRAW W ON WO.WITHDRAW_ID = W.ID
+        WHERE 1=1
+            AND W.ID = #{withdrawId}
+        order by T.ADD_TIME DESC
+    </select>
+</mapper>
